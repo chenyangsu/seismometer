@@ -1,0 +1,1 @@
+Prevalence and the ``TP (%)``, ``FP (%)``, ``TN (%)`` and ``FN (%)`` columns in the analytics and fairness tables are now computed over the rows that have both a score and a target, the same rows used for the other metrics.

@@ -261,6 +261,16 @@ class TestBinaryMetricGenerator:
         assert result == {"Accuracy": 0.8, "PPV": 0.5}
         mock_stats.assert_called_once_with(data, "TARGET", "SCORE", ["Accuracy", "PPV"])
 
+    def test_count_percentages_exclude_rows_without_score(self):
+        metrics = undertest.BinaryClassifierMetricGenerator()
+        data = pd.DataFrame(
+            {"truth": [0, 0, 1, 1, 1, 0, 1, 0], "score": [0.1, 0.2, 0.6, 0.7, 0.8, 0.3, np.nan, np.nan]}
+        )
+
+        actual = metrics(data, undertest.PERCENTS, target_col="truth", score_col="score", score_threshold=0.5)
+
+        assert actual == {"TP (%)": 50.0, "FP (%)": 0.0, "TN (%)": 50.0, "FN (%)": 0.0}
+
     def test_calc_ci_maps_roc_values(self):
         metrics = undertest.BinaryClassifierMetricGenerator(rho=0.2)
         _, truth, output, _, _ = ci_testcase0()

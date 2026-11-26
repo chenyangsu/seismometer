@@ -194,6 +194,7 @@ class BinaryClassifierMetricGenerator(MetricGenerator):
         logger.info(f"data before using calculating stats has {len(y_true)} rows.")
         keep = ~(np.isnan(y_true) | np.isnan(y_pred))
         logger.info(f"Calculating stats drops {len(y_true)-len(y_true[keep])} rows.")
+        n_kept = keep.sum()
         stats = (
             calculate_bin_stats(y_true, y_pred, rho=self.rho, threshold_precision=threshold_precision)
             .round(5)
@@ -201,12 +202,12 @@ class BinaryClassifierMetricGenerator(MetricGenerator):
         )
 
         for name, percent in zip(COUNTS, PERCENTS):
-            stats[percent] = stats[name] * 100.0 / len(dataframe)
+            stats[percent] = stats[name] * 100.0 / n_kept
 
         # Calculate overall statistics
         overall_stats = {}
         overall_stats["Positives"] = stats["TP"].iloc[-1]
-        overall_stats["Prevalence"] = stats["TP"].iloc[-1] / len(dataframe)
+        overall_stats["Prevalence"] = stats["TP"].iloc[-1] / n_kept
         overall_stats["AUROC"] = auc(1 - stats["Specificity"], stats["Sensitivity"])
         overall_stats["AUPRC"] = auc(stats["Sensitivity"], stats["PPV"])
 

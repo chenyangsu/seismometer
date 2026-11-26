@@ -110,6 +110,18 @@ class TestCalculateStats:
         assert stats["Positives"] == np.sum(df["target"])
         assert stats["Prevalence"] == np.mean(df["target"])
 
+    def test_prevalence_excludes_rows_without_score(self):
+        df = pd.DataFrame(
+            {
+                "target": [0, 1, 0, 1, 1, 0, 1, 0, 1, 0],
+                "score": [0.1, 0.4, 0.35, 0.8, 0.7, 0.2, np.nan, np.nan, 0.6, 0.5],
+            }
+        )
+        scored = df.dropna()
+        stats = calculate_stats(df, "target", "score", "Sensitivity", [0.5, 0.7])
+        assert stats["Positives"] == np.sum(scored["target"])
+        assert stats["Prevalence"] == np.mean(scored["target"])
+
     @pytest.mark.parametrize("metric", ["Sensitivity", "Specificity", "Flag Rate"])
     def test_metric_values_decimals(self, metric):
         df = pd.DataFrame(
