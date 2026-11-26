@@ -358,6 +358,31 @@ class TestExploreModelEvaluation:
         assert isinstance(result, HTML)
         assert "rendered" in result.data
 
+    @patch("seismometer.api.plots.telemetry.record_dataframe_metrics")
+    @patch("seismometer.api.plots.pdh.get_model_scores")
+    @patch("seismometer.api.plots.plot.evaluation", return_value=SVG('<svg xmlns="http://www.w3.org/2000/svg"></svg>'))
+    @patch("seismometer.html.template.render_title_with_image", return_value=HTML("rendered"))
+    @patch("seismometer.data.filter.FilterRule.filter")
+    def test_model_evaluation_records_selected_thresholds(
+        self, mock_filter, mock_render, mock_plot, mock_scores, mock_record, fake_seismo
+    ):
+        df = fake_seismo.dataframe.copy()
+        df["event1_Value"] = [0, 1, 1, 0]
+        mock_filter.return_value = df
+        mock_scores.return_value = df
+
+        _model_evaluation(
+            df,
+            entity_keys=["entity"],
+            target_event="event1",
+            target="event1_Value",
+            score_col="score1",
+            thresholds=[0.29, 0.58],
+            censor_threshold=0,
+        )
+
+        assert mock_record.call_args.kwargs["filter_rule"].right == [29, 58]
+
 
 _mock_perf_df = pd.DataFrame({"metric": [1], "cohort": ["Group"], "Threshold": [0]})
 

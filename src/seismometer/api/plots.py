@@ -437,7 +437,7 @@ def _plot_cohort_evaluation(
 
     # Log metrics using new API
     # Allow filtering by preconfigured thresholds if desired
-    threshold_values = [int(t * 100) for t in thresholds]
+    threshold_values = [round(t * 100) for t in thresholds]
     threshold_filter = FilterRule.isin("Threshold", threshold_values)
 
     # Use API to record performance metrics
@@ -598,7 +598,7 @@ def _model_evaluation(
     # The record_dataframe_metrics will automatically split metrics into log_all vs log_some
     # and apply the threshold filter only to log_some metrics
     params = {"target_column": target, "score_column": score_col}
-    threshold_values = [int(t * 100) for t in thresholds]
+    threshold_values = [round(t * 100) for t in thresholds]
     threshold_filter = FilterRule.isin("Threshold", threshold_values)
 
     telemetry.record_dataframe_metrics(

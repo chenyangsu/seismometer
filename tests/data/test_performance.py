@@ -318,6 +318,16 @@ class TestBinaryMetricGenerator:
         stats, _ = metrics.calculate_binary_stats(df, "truth", "score", ["Accuracy"])
         assert 55 in stats.index  # score_threshold=0.55 → index 55
 
+    @pytest.mark.parametrize("score_threshold", [0.28, 0.29, 0.57, 0.58])
+    def test_score_threshold_uses_matching_row(self, score_threshold):
+        # 0.29 * 100 == 28.999999999999996, so truncating to int would read the row for 0.28
+        metrics = undertest.BinaryClassifierMetricGenerator()
+        df = pd.DataFrame({"truth": [0, 0, 1, 1, 1, 0], "score": [0.10, 0.285, 0.35, 0.40, 0.575, 0.60]})
+
+        actual = metrics(df, ["Flag Rate"], target_col="truth", score_col="score", score_threshold=score_threshold)
+
+        assert actual["Flag Rate"] == pytest.approx((df["score"] >= score_threshold).mean(), abs=1e-5)
+
     def test_overall_stats_include_auc_with_precision(self):
         metrics = undertest.BinaryClassifierMetricGenerator()
         y_true = np.array([1, 1, 0, 0])

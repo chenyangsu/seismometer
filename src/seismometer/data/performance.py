@@ -164,7 +164,7 @@ class BinaryClassifierMetricGenerator(MetricGenerator):
             A dictionary of metric names and their values.
         """
         stats = self.calculate_binary_stats(dataframe, target_col, score_col, metric_names)[0]
-        score_threshold_integer = int(score_threshold * 100)
+        score_threshold_integer = round(score_threshold * 100)
         stats = stats.loc[score_threshold_integer]
         return stats.to_dict()
 
