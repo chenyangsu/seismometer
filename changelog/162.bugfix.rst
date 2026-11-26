@@ -1,0 +1,1 @@
+Metrics whose source column is missing from the loaded data are now skipped with a warning, so ``ExploreOrdinalMetrics`` and related widgets no longer raise a ``KeyError`` for them.

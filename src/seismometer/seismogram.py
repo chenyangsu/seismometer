@@ -130,6 +130,7 @@ class Seismogram(object, metaclass=Singleton):
         self.dataframe = self.dataloader.load_data(predictions, events)
         self.dataframe = self._apply_load_time_filters(self.dataframe)
 
+        self._drop_metrics_missing_from_data()
         self.create_cohorts()
         self._build_cohort_hierarchy_combinations()
         self._set_df_counts()
@@ -387,6 +388,25 @@ class Seismogram(object, metaclass=Singleton):
         FilterRule.MAXIMUM_NUM_COHORTS = MAXIMUM_NUM_COHORTS
         filtered_df = FilterRule.from_filter_config_list(self.config.usage.load_time_filters).filter(df)
         return filtered_df.reset_index(drop=True)
+
+    def _drop_metrics_missing_from_data(self) -> None:
+        """Removes configured metrics whose source column is not in the loaded data."""
+        missing = [source for source in self.config.metrics if source not in self.dataframe.columns]
+        for source in missing:
+            logger.warning(
+                f"Source column {source} not found in data; "
+                + f"skipping metric {self.config.metrics[source].display_name}."
+            )
+
+        self.metrics = {source: metric for source, metric in self.config.metrics.items() if source not in missing}
+        self.metric_groups = {
+            group: [source for source in sources if source not in missing]
+            for group, sources in self.config.metric_groups.items()
+        }
+        self.metric_types = {
+            metric_type: [source for source in sources if source not in missing]
+            for metric_type, sources in self.config.metric_types.items()
+        }
 
     def create_cohorts(self) -> None:
         """Creates data columns for each cohort defined in configuration."""

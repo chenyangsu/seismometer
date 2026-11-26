@@ -553,6 +553,32 @@ class TestSeismogramLoadData:
         assert sg.dataframe["entity"].iloc[0] == 2
         Seismogram.kill()
 
+    def test_load_data_drops_metrics_missing_from_data(self, tmp_path, caplog):
+        config = get_test_config(tmp_path)
+        loader = get_test_loader(config)
+
+        metadata_path = tmp_path / "metadata.json"
+        metadata_path.write_text('{"thresholds": [0.2], "modelname": "MyModel"}')
+        config.metadata_path = metadata_path
+        config.usage.load_time_filters = None
+        config.cohort_hierarchies = []
+
+        sg = Seismogram(config, loader)
+
+        # Metric3 is configured but has no column in the data
+        loader.load_data.return_value = get_test_data().drop(columns=["Metric3"])
+
+        with caplog.at_level(logging.WARNING, logger="seismometer"):
+            sg.load_data()
+
+        assert "Source column Metric3 not found in data; skipping metric Metric3." in caplog.text
+        assert list(sg.metrics) == ["Metric1", "Metric2"]
+        assert sg.metric_groups == {"Group1": ["Metric1", "Metric2"], "Group2": ["Metric1"]}
+        assert sg.metric_types == {"ordinal/categorical": ["Metric1"], "Type2": ["Metric2"]}
+        assert sg.get_ordinal_categorical_metrics(max_cat_size=5) == ["Metric1"]
+        assert "Metric3" in config.metrics  # configuration is left unchanged
+        Seismogram.kill()
+
     def test_warns_and_defaults_on_missing_thresholds(self, tmp_path, fake_seismo, caplog):
         metadata_path = tmp_path / "metadata.json"
         metadata_path.write_text('{"modelname": "TestModel"}')
